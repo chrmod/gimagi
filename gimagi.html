@@ -21,11 +21,13 @@
 
 <template name="meeting_box">
   <div class="meeting-box">{{name}}</div>
-  {{#if showDetails}}
-  	{{> meeting_details}}
+  {{#if isPendingOnMe}}
+  	{{> pending_on_me}}
+  {{else}}
+  	{{#if showDetails}}
+  	  {{> meeting_details}}
+    {{/if}}
   {{/if}}
-  <span>is pending on me: {{isPendingOnMe}}</span>
-  {{> pending_on_me}}
 </template>
 	
 <template name="meeting_details">
@@ -47,6 +49,6 @@
 	<div>This meeting is pending on you:</div>
 	<div>{{date}}</div>
 	<input id="agree" type="button" value="agree" />
-	<input type="button" value="suggest another date" />
-	<input id="opt-out" type="button" value="suggest another date" />
+	<input id="suggest" type="button" value="suggest another date" />
+	<input id="opt-out" type="button" value="opt-out" />
 </template>

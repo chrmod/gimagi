@@ -39,25 +39,27 @@ if (Meteor.isClient) {
 
   Template.pending_on_me.events({
     'click #agree': function () {
-      this.pendingon.forEach(function(item, index) {
-        if(item == me.name) {
-          this.pendingon.splice(index, 1);
-          return;
+      for(var i = 0; i < this.pendingon.length; i++) {
+        if(this.pendingon[i] == me.name) {
+          this.pendingon.splice(i, 1);
+          break;
         }
-      });
+      }
       saveMeeting(this._id, this.name, this.from, this.to, this.duration, this.description, this.people, this.pendingon, this.constraints);
     },
     'click #opt-out': function () {
-      this.people.forEach(function(item, index) {
-        if(item == me.name) {
-          this.people.splice(index, 1);
+      for(var i = 0; i < this.pendingon.length; i++) {
+        if(this.pendingon[i] == me.name) {
+          this.pendingon.splice(i, 1);
+          break;
         }
-      });
-      this.pendingon.forEach(function(item, index) {
-        if(item == me.name) {
-          this.pendingon.splice(index, 1);
+      }
+      for(var i = 0; i < this.people.length; i++) {
+        if(this.people[i] == me.name) {
+          this.people.splice(i, 1);
+          break;
         }
-      });
+      }
       saveMeeting(this._id, this.name, this.from, this.to, this.duration, this.description, this.people, this.pendingon, this.constraints);
     }
   });
@@ -67,7 +69,7 @@ if (Meteor.isClient) {
       return Meetings.find().fetch().length;
     },
     meetings: function () {
-      return Meetings.find().fetch();
+      return Meetings.find({people: me.name}).fetch();
     },
     detailsMode: function () {
       return Template.instance().detailsMode.get();
@@ -83,7 +85,7 @@ if (Meteor.isClient) {
       return Session.get("current_meeting_id") === this._id;
     },
     isPendingOnMe: function () {
-      return this.pendingon.indexOf(me.name) > -1 ? "yes" : "no";
+      return this.pendingon.indexOf(me.name) > -1;
     }
   })
 
