@@ -146,7 +146,7 @@ if (Meteor.isClient) {
     },
     'click #opt-out': function () {
       for(var i = 0; i < this.pendingon.length; i++) {
-        if(this.pendingon[i] == me.name) {
+        if(this.pendingon[i] == Meteor.user().profile.name) {
           this.pendingon.splice(i, 1);
           break;
         }
@@ -166,7 +166,7 @@ if (Meteor.isClient) {
       return Meetings.find().fetch().length;
     },
     meetings: function () {
-      return Meetings.find({people: me.name}).fetch();
+      return Meetings.find({people: Meteor.user().profile.name}).fetch();
     },
     detailsMode: function () {
       return Template.instance().detailsMode.get();
@@ -206,7 +206,7 @@ if (Meteor.isClient) {
       var name = event.target.name.value;
       var description = event.target.description.value;
       var people = event.target.people.value.split(";");
-      people.push(me.name);
+      people.push(Meteor.user().profile.name);
       var pendingon = event.target.people.value.split(";");
       var constraints = event.target.constraints.value.split(";");
       var from = event.target.from.value;
