@@ -1,3 +1,4 @@
+
 var IntervalSet = function(intervals) {
   if (!intervals) {
     this.intervals = []
@@ -99,27 +100,127 @@ IntervalSet.prototype = {
   },
 }
 
-Events = new Mongo.Collection("events");
+Meetings = new Mongo.Collection("meetings");
 
 if (Meteor.isClient) {
-  // counter starts at 0
-  Session.setDefault('counter', 0);
 
-  Template.hello.helpers({
-    counter: function () {
-      return Events.find().fetch().length;
+  var saveMeeting = function (id, name, from, to, duration, description, people, pendingon, constraints) {
+    var status = pendingon.length == 0 ? 'done' : 'pending';
+    if (id) {
+      Meetings.update(this._id, {
+        name: name,
+        from: from,
+        to: to,
+        duration: duration,
+        description: description,
+        people: people,
+        pendingon: pendingon,
+        constraints: constraints,
+        status: 'pending'
+      });
+    } else {
+      Meetings.insert({
+        name: name,
+        from: from,
+        to: to,
+        duration: duration,
+        description: description,
+        people: people,
+        pendingon: pendingon,
+        constraints: constraints,
+        createdAt: new Date(),
+        status: 'pending'
+      });
+    }
+  }
+
+  Template.pending_on_me.events({
+    'click #agree': function () {
+      this.pendingon.forEach(function(item, index) {
+        if(item == Meteor.user().profile.name) {
+          this.pendingon.splice(index, 1);
+          return;
+        }
+      });
+      saveMeeting(this._id, this.name, this.from, this.to, this.duration, this.description, this.people, this.pendingon, this.constraints);
     },
-    freeBusy: function () {
- //     return GoogleApi.get("calendar/v3/users/me/calendarList")
-//GoogleApi.get("calendar/v3/users/me/calendarList", {user: user })
+    'click #opt-out': function () {
+      this.people.forEach(function(item, index) {
+        if(item == Meteor.user().profile.name) {
+          this.people.splice(index, 1);
+        }
+      });
+      this.pendingon.forEach(function(item, index) {
+        if(item == Meteor.user().profile.name) {
+          this.pendingon.splice(index, 1);
+        }
+      });
+      saveMeeting(this._id, this.name, this.from, this.to, this.duration, this.description, this.people, this.pendingon, this.constraints);
     }
   });
 
+  Template.home.helpers({
+    counter: function () {
+      return Meetings.find().fetch().length;
+    },
+    meetings: function () {
+      return Meetings.find().fetch();
+    },
+    detailsMode: function () {
+      return Template.instance().detailsMode.get();
+    }
+  });
 
-  Template.hello.events({
-    'click button': function () {
-      // increment the counter when button is clicked
-      Events.insert({'type': 'click'})
+  Template.home.created = function() {
+    this.detailsMode = new ReactiveVar(false);
+  };
+
+  Template.meeting_box.helpers({
+    showDetails: function () {
+      return Session.get("current_meeting_id") === this._id;
+    },
+    isPendingOnMe: function () {
+      return this.pendingon.indexOf(Meteor.user().profile.name) > -1 ? "yes" : "no";
+    }
+  })
+
+  Template.meeting_box.events({
+    'click .meeting-box': function (event, template) {
+      Session.set("current_meeting_id", this._id);
+      // var detailsMode = template.detailsMode.get();
+      // template.detailsMode.set(!detailsMode);
+    }
+  })
+
+  Template.meeting_details.created = function() {
+    this.detailsMode = new ReactiveVar(false);
+  };
+
+  Template.meeting_details.events({
+    'submit form': function (event) {
+      var me = Meteor.user().profile;
+      event.preventDefault();
+
+      var name = event.target.name.value;
+      var description = event.target.description.value;
+      var people = event.target.people.value.split(";");
+      people.push(me.name);
+      var pendingon = event.target.people.value.split(";");
+      var constraints = event.target.constraints.value.split(";");
+      var from = event.target.from.value;
+      var to = event.target.to.value;
+      var duration = event.target.duration.value;
+
+      saveMeeting(this._id, name, from, to, duration, description, people, pendingon, constraints);
+
+    }
+  });
+
+  Template.home.events({
+    'click .show-details': function(event,template) {
+      var detailsMode = template.detailsMode.get();
+      template.detailsMode.set(!detailsMode);
+      Session.set("current_meeting_id", 0);
     }
   });
 
@@ -137,19 +238,22 @@ if (Meteor.isClient) {
 }
 
 if (Meteor.isServer) {
+
+
+
   Meteor.startup(function () {
-    // code to run on server at startup
+     var xxy = function(){}
   });
 
   Meteor.methods({
     propose: function(id) {
       var meeting = Meetings.findOne({'_id': id});
 
-      check(meeting.members, Array);
-      check(meeting.from, Date);
-      check(meeting.to, Date);
-      check(meeting.constraints, Array);
-      check(meeting.duration, Number);
+      // check(meeting.people, Array);
+      // check(meeting.from, Date);
+      // check(meeting.to, Date);
+      // check(meeting.constraints, Array);
+      // check(meeting.duration, Number);
 
       var intervals = new IntervalSet();
       intervals.addDateRange(meeting.from, meeting.to);
@@ -160,7 +264,7 @@ if (Meteor.isServer) {
         intervals.notBetweenHours(12, 14);
       }
 
-      meeting.members.forEach(function(name) {
+      meeting.people.forEach(function(name) {
         var user = Meteor.users.findOne({profile: {name: name}}),
           calendars = GoogleApi.get("calendar/v3/users/me/calendarList", {user: user}),
           calendar_ids = calendars.items.filter(function(item) { return 'primary' in item && item['primary'] == true}).map(function(e) { return e.id; }),
@@ -179,10 +283,10 @@ if (Meteor.isServer) {
 
       Meetings.update(id, {
         $set: {
-          proposals: intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 10)
+          proposals: intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 10).map(function(i) {
+            return i.toString(); })
         }
       });
-
     }
   });
 }
