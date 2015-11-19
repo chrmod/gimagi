@@ -140,4 +140,49 @@ if (Meteor.isServer) {
   Meteor.startup(function () {
     // code to run on server at startup
   });
+
+  Meteor.methods({
+    propose: function(id) {
+      var meeting = Meetings.findOne({'_id': id});
+
+      check(meeting.members, Array);
+      check(meeting.from, Date);
+      check(meeting.to, Date);
+      check(meeting.constraints, Array);
+      check(meeting.duration, Number);
+
+      var intervals = new IntervalSet();
+      intervals.addDateRange(meeting.from, meeting.to);
+      if (meeting.constraints.indexOf('work_hours') > -1) {
+        intervals.betweenHours(9, 18);
+      }
+      if (meeting.constraints.indexOf('not_lunch') > -1) {
+        intervals.notBetweenHours(12, 14);
+      }
+
+      meeting.members.forEach(function(name) {
+        var user = Meteor.users.findOne({profile: {name: name}}),
+          calendars = GoogleApi.get("calendar/v3/users/me/calendarList", {user: user}),
+          calendar_ids = calendars.items.filter(function(item) { return 'primary' in item && item['primary'] == true}).map(function(e) { return e.id; }),
+          data = {
+            "timeMin": moment(meeting.from).toISOString(),
+            "timeMax": moment(meeting.to).toISOString(),
+            "items": calendar_ids.map(function(id) { return {"id": id}})
+          },
+          freebusy = GoogleApi.post("calendar/v3/freeBusy", {user: user, data: data});
+        for (var calendar in freebusy.calendars) {
+          freebusy.calendars[calendar].busy.forEach(function(r){
+            intervals.removeInterval(moment(r.start), moment(r.end));
+          });
+        }
+      });
+
+      Meetings.update(id, {
+        $set: {
+          proposals: intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 10)
+        }
+      });
+
+    }
+  });
 }
