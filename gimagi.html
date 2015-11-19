@@ -26,6 +26,9 @@
   {{/if}}
   <span>is pending on me: {{isPendingOnMe}}</span>
   {{> pending_on_me}}
+  {{#each proposals}}
+  {{ this }}
+  {{/each}}
 </template>
 	
 <template name="meeting_details">
