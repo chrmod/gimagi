@@ -160,17 +160,17 @@ if (Meteor.isClient) {
       if (i >= 0) {
         pendingon.splice(i, 1);
       }
-      var rejected = moment.range(moment(meeting.current_proposal[0]), moment(meeting.current_proposal[1])),
-        suggested = moment.range(moment(this[0]), moment(this[1])),
-        intervals = new IntervalSet(meeting.intervals);
-      intervals.removeInterval(rejected.start, rejected.end);
-      var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 5);
+      // var rejected = moment.range(moment(meeting.current_proposal[0]), moment(meeting.current_proposal[1])),
+      //   intervals = new IntervalSet(meeting.intervals);
+      // intervals.removeInterval(rejected.start, rejected.end);
+      // var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 5);
       Meetings.update(meeting._id, {
         $set: { current_proposal: this,
                 status: 'pending',
                 pendingon: pendingon,
-                proposals: proposals,
-                intervals: intervals.intervals }
+                //proposals: proposals,
+                //intervals: intervals.intervals
+        }
       });
     }
   });
