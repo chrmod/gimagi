@@ -223,7 +223,7 @@ if (Meteor.isClient) {
     pendingMeetings() {
       var me = Meteor.user().profile.name;
       return Meetings.find({people: Meteor.user().profile.name}).fetch().filter(function (meeting) {
-        return meeting.status === "pending" && meeting.pendingon.indexOf(me) > -1;
+        return meeting.pendingon.indexOf(me) > -1;
       });
     },
     meetings: function () {
