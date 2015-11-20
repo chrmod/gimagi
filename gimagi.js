@@ -1,20 +1,29 @@
 
 var IntervalSet = function(intervals) {
   if (!intervals) {
-    this.intervals = []
+    this.intervals = [];
   } else {
-    this.intervals = intervals;
+    var _intervals = [];
+    intervals.forEach(function(i) {
+      _intervals.push(moment.range(moment(i.start), moment(i.end)));
+    });
+    this.intervals = _intervals;
   }
 }
 
 IntervalSet.prototype = {
 
   addDateRange: function(start, end) {
+    start = moment(start);
+    end = moment(end);
+    if (start.isSame(end, 'day')) {
+      end.endOf('day');
+    }
     var interval = moment.range(moment(start), moment(end)),
       self = this;
     interval.by('days', function(start) {
       var day_range = moment.range(start, moment(start).endOf('day'));
-      day_range.intersect(interval);
+      day_range = day_range.intersect(interval);
       self.intervals.push(day_range);
     });
     return this;
@@ -26,7 +35,7 @@ IntervalSet.prototype = {
         start = moment(start_of_day).add({'hours': s}),
         end = moment(start_of_day).add({'hours': f}),
         range = moment.range(start, end);
-      range.intersect(r);
+      range = range.intersect(r);
       return range;
     });
     return this;
@@ -132,7 +141,7 @@ if (Meteor.isClient) {
         pendingon: pendingon,
         constraints: constraints,
         createdAt: new Date(),
-        status: 'initial'
+        status: 'pending'
       }, function(err, id) {
         if (err) {
           console.log(err);
@@ -145,15 +154,23 @@ if (Meteor.isClient) {
 
   Template.suggest_other.events({
     'click #proposal': function (event, template) {
-      var pendingon = template.data.people.slice();
+      var pendingon = template.data.people.slice(),
+        meeting = template.data;
       var i = pendingon.indexOf(Meteor.user().profile.name);
       if (i >= 0) {
         pendingon.splice(i, 1);
       }
-      Meetings.update(template.data._id, {
+      var rejected = moment.range(moment(meeting.current_proposal[0]), moment(meeting.current_proposal[1])),
+        suggested = moment.range(moment(this[0]), moment(this[1])),
+        intervals = new IntervalSet(meeting.intervals);
+      intervals.removeInterval(rejected.start, rejected.end);
+      var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 5);
+      Meetings.update(meeting._id, {
         $set: { current_proposal: this,
                 status: 'pending',
-                pendingon: pendingon }
+                pendingon: pendingon,
+                proposals: proposals,
+                intervals: intervals.intervals }
       });
     }
   });
@@ -336,13 +353,26 @@ if (Meteor.isServer) {
       // check(meeting.constraints, Array);
       // check(meeting.duration, Number);
 
-      var intervals = new IntervalSet();
-      intervals.addDateRange(moment.max(meeting.from, moment()), meeting.to);
+      var intervals = new IntervalSet(),
+        from = moment(moment.max(meeting.from, moment())),
+        to = moment(meeting.to);
+      to.endOf('day');
+
+      intervals.addDateRange(from, to);
       if (meeting.constraints.indexOf('work_hours') > -1) {
         intervals.betweenHours(9, 18);
       }
       if (meeting.constraints.indexOf('not_lunch') > -1) {
         intervals.notBetweenHours(12, 14);
+      }
+      if (meeting.constraints.indexOf('evening') > -1) {
+        intervals.betweenHours(18, 23);
+      }
+      if (meeting.constraints.indexOf('morning') > -1) {
+        intervals.betweenHours(7, 12);
+      }
+      if (meeting.constraints.indexOf('afternoon') > -1) {
+        intervals.betweenHours(12, 18);
       }
 
       meeting.people.forEach(function(name) {
@@ -350,8 +380,8 @@ if (Meteor.isServer) {
           calendars = GoogleApi.get("calendar/v3/users/me/calendarList", {user: user}),
           calendar_ids = calendars.items.filter(function(item) { return 'primary' in item && item['primary'] == true}).map(function(e) { return e.id; }),
           data = {
-            "timeMin": moment(meeting.from).toISOString(),
-            "timeMax": moment(meeting.to).toISOString(),
+            "timeMin": from.toISOString(),
+            "timeMax": to.toISOString(),
             "items": calendar_ids.map(function(id) { return {"id": id}})
           },
           freebusy = GoogleApi.post("calendar/v3/freeBusy", {user: user, data: data});
@@ -362,15 +392,19 @@ if (Meteor.isServer) {
         }
       });
 
-      var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 10);
-      Meetings.update(id, {
-        $set: {
-          intervals: intervals.intervals,
-          current_proposal: [proposals[0].start.toDate(), proposals[0].end.toDate()],
-          proposals: proposals.map(function(i) {
-            return [i.start.toDate(), i.end.toDate()]; })
-        }
-      });
+      var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 6),
+        current_proposal = proposals.shift();
+      console.log(proposals);
+      if (proposals.length > 0) {
+        Meetings.update(id, {
+          $set: {
+            intervals: intervals.intervals,
+            current_proposal: [current_proposal.start.toDate(), current_proposal.end.toDate()],
+            proposals: proposals.map(function(i) {
+              return [i.start.toDate(), i.end.toDate()]; })
+          }
+        });
+      }
     }
   });
 }
