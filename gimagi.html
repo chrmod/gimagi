@@ -21,6 +21,7 @@
 
 <template name="meeting_box">
   <div class="meeting-box">{{name}}</div>
+  <p>Status: {{status}}</p>
   {{#if isPendingOnMe}}
   	{{> pending_on_me}}
   {{else}}
@@ -28,9 +29,10 @@
   	  {{> meeting_details}}
     {{/if}}
   {{/if}}
-  {{#each proposals}}
-  {{ this }}
-  {{/each}}
+  <p>{{ current_proposal }}</p>
+  <!-- {{#each proposals}}
+  {{ proposals[0] }}
+  {{/each}} -->
 </template>
 	
 <template name="meeting_details">
@@ -42,8 +44,6 @@
     <input type="text" name="description" value="{{description}}" placeholder="Description..." />
     <input type="text" name="constraints" value="{{constraints}}" placeholder="Constraints..." />
     <input type="text" name="people" value="{{#each people}} {{this}} {{/each}}" placeholder="people..." required/>
-    <span>Status: {{status}}</span>
-    <span>Pending On: {{#each pendingon}} {{this}} {{/each}}</span>
     <input type="submit" value="initiate"/>
   </form>
 </template>

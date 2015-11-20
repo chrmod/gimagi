@@ -106,17 +106,20 @@ if (Meteor.isClient) {
 
   var saveMeeting = function (id, name, from, to, duration, description, people, pendingon, constraints) {
     var status = pendingon.length == 0 ? 'done' : 'pending';
+    console.log(id);
     if (id) {
+      console.log('update');
       Meetings.update(this._id, {
-        name: name,
-        from: from,
-        to: to,
-        duration: duration,
-        description: description,
-        people: people,
-        pendingon: pendingon,
-        constraints: constraints,
-        status: 'pending'
+        $set: {name: name,
+          from: from,
+          to: to,
+          duration: duration,
+          description: description,
+          people: people,
+          pendingon: pendingon,
+          constraints: constraints,
+          status: status
+        }
       });
     } else {
       Meetings.insert({
@@ -129,35 +132,43 @@ if (Meteor.isClient) {
         pendingon: pendingon,
         constraints: constraints,
         createdAt: new Date(),
-        status: 'pending'
+        status: status
+      }, function(err, id) {
+        if (err) {
+          console.log(err);
+        } else {
+          Meteor.call('propose', id);
+        }
       });
     }
   }
 
   Template.pending_on_me.events({
     'click #agree': function () {
-      for(var i = 0; i < this.pendingon.length; i++) {
-        if(this.pendingon[i] == Meteor.user().profile.name) {
-          this.pendingon.splice(i, 1);
-          break;
-        }
+      var i = this.pendingon.indexOf(Meteor.user().profile.name);
+      if (i >= 0) {
+        this.pendingon.splice(i, 1);
       }
-      saveMeeting(this._id, this.name, this.from, this.to, this.duration, this.description, this.people, this.pendingon, this.constraints);
+      console.log(this);
+      Meetings.update(this._id, {
+        $set: { pendingon: this.pendingon }
+      });
     },
     'click #opt-out': function () {
-      for(var i = 0; i < this.pendingon.length; i++) {
-        if(this.pendingon[i] == Meteor.user().profile.name) {
-          this.pendingon.splice(i, 1);
-          break;
-        }
+      var i = this.pendingon.indexOf(Meteor.user().profile.name);
+      if (i >= 0) {
+        this.pendingon.splice(i, 1);
       }
-      for(var i = 0; i < this.people.length; i++) {
-        if(this.people[i] == Meteor.user().profile.name) {
-          this.people.splice(i, 1);
-          break;
-        }
+      i = this.people.indexOf(Meteor.user().profile.name);
+      if (i >= 0) {
+        this.people.splice(i, 1);
       }
-      saveMeeting(this._id, this.name, this.from, this.to, this.duration, this.description, this.people, this.pendingon, this.constraints);
+      Meetings.update(this._id, {
+        $set: { 
+          pendingon: this.pendingon,
+          people: this.people
+        }
+      });
     }
   });
 
@@ -206,8 +217,8 @@ if (Meteor.isClient) {
       var name = event.target.name.value;
       var description = event.target.description.value;
       var people = event.target.people.value.split(";");
-      people.push(Meteor.user().profile.name);
-      var pendingon = event.target.people.value.split(";");
+      people.push(me.name);
+      var pendingon = people;
       var constraints = event.target.constraints.value.split(";");
       var from = event.target.from.value;
       var to = event.target.to.value;
@@ -258,7 +269,7 @@ if (Meteor.isServer) {
       // check(meeting.duration, Number);
 
       var intervals = new IntervalSet();
-      intervals.addDateRange(meeting.from, meeting.to);
+      intervals.addDateRange(moment.max(meeting.from, moment()), meeting.to);
       if (meeting.constraints.indexOf('work_hours') > -1) {
         intervals.betweenHours(9, 18);
       }
@@ -283,9 +294,12 @@ if (Meteor.isServer) {
         }
       });
 
+      var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 10);
       Meetings.update(id, {
         $set: {
-          proposals: intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 10).map(function(i) {
+          intervals: intervals.intervals,
+          current_proposal: [proposals[0].start.toDate(), proposals[0].end.toDate()],
+          proposals: proposals.map(function(i) {
             return i.toString(); })
         }
       });
