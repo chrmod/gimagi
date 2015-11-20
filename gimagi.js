@@ -109,7 +109,7 @@ if (Meteor.isClient) {
     console.log(id);
     if (id) {
       console.log('update');
-      Meetings.update(this._id, {
+      Meetings.update(id, {
         $set: {name: name,
           from: from,
           to: to,
@@ -263,14 +263,21 @@ if (Meteor.isClient) {
   };
 
   Template.meeting_details.events({
-    'submit form': function (event) {
+    'submit form': function (event, template) {
       var me = Meteor.user().profile;
       event.preventDefault();
 
       var name = event.target.name.value;
       var description = event.target.description.value;
       var people = event.target.people.value.split(";");
-      people.push(me.name);
+      for(var i = 0; i < people.length; i++) {
+        if(people[i] == "") {
+          people.splice(i, 1);
+        }
+      }
+      if(people.indexOf(me.name) == -1) {
+        people.push(me.name);
+      }
       var pendingon = people;
       var constraints = event.target.constraints.value.split(";");
       var from = event.target.from.value;
@@ -278,6 +285,8 @@ if (Meteor.isClient) {
       var duration = event.target.duration.value;
 
       saveMeeting(this._id, name, from, to, duration, description, people, pendingon, constraints);
+      template.detailsMode.set(false);
+      Session.set("current_meeting_id", 0);
 
     }
   });
