@@ -132,7 +132,7 @@ if (Meteor.isClient) {
         pendingon: pendingon,
         constraints: constraints,
         createdAt: new Date(),
-        status: status
+        status: 'initial'
       }, function(err, id) {
         if (err) {
           console.log(err);
@@ -143,15 +143,45 @@ if (Meteor.isClient) {
     }
   }
 
+  Template.suggest_other.events({
+    'click #proposal': function (event, template) {
+      var pendingon = template.data.people.slice();
+      var i = pendingon.indexOf(Meteor.user().profile.name);
+      if (i >= 0) {
+        pendingon.splice(i, 1);
+      }
+      Meetings.update(template.data._id, {
+        $set: { current_proposal: this,
+                status: 'pending',
+                pendingon: pendingon }
+      });
+    }
+  });
+
+  Template.pending_on_me.created = function () {
+    this.suggestMode = new ReactiveVar(false);
+  }
+
+  Template.pending_on_me.helpers({
+    suggestMode: function () {
+      return Template.instance().suggestMode.get();
+    }
+  });
+
+
   Template.pending_on_me.events({
     'click #agree': function () {
       var i = this.pendingon.indexOf(Meteor.user().profile.name);
       if (i >= 0) {
         this.pendingon.splice(i, 1);
       }
+      if(this.pendingon.length == 0) {
+        this.status = 'ready'
+      }
       console.log(this);
       Meetings.update(this._id, {
-        $set: { pendingon: this.pendingon }
+        $set: { pendingon: this.pendingon,
+                status: this.status }
       });
     },
     'click #opt-out': function () {
@@ -163,12 +193,20 @@ if (Meteor.isClient) {
       if (i >= 0) {
         this.people.splice(i, 1);
       }
+      if(this.pendingon.length == 0) {
+        this.status = 'ready'
+      }
       Meetings.update(this._id, {
         $set: { 
           pendingon: this.pendingon,
-          people: this.people
+          people: this.people,
+          status: this.status
         }
       });
+    },
+    'click #suggest-other': function (event, template) {
+      // var suggestMode = template.suggestMode.get();
+      template.suggestMode.set(true);
     }
   });
 
