@@ -93,7 +93,7 @@
     <input type="text" name="description" value="{{description}}" placeholder="Description..." />
     <input type="text" name="constraints" value="{{constraints}}" placeholder="Constraints..."/>
     <input type="text" name="people" value="{{#each people}}{{this}};{{/each}}" placeholder="people..." required/>
-    <input type="submit" value="initiate"/>
+    <input type="submit" value="{{#if _id}}edit{{else}}initiate{{/if}}"/>
   </form>
 </template>
 
