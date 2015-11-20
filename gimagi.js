@@ -300,7 +300,7 @@ if (Meteor.isServer) {
           intervals: intervals.intervals,
           current_proposal: [proposals[0].start.toDate(), proposals[0].end.toDate()],
           proposals: proposals.map(function(i) {
-            return [proposals[0].start.toDate(), proposals[0].end.toDate()]; })
+            return [i.start.toDate(), i.end.toDate()]; })
         }
       });
     }
