@@ -266,7 +266,7 @@ if (Meteor.isClient) {
       return this.pendingon.indexOf(Meteor.user().profile.name) > -1;
     },
     niceDuration() {
-      return moment.duration(this.duration, 'minutes').asHours();
+      return moment.duration(Number(this.duration), 'minutes').asHours();
     },
     niceProposal() {
       return moment(this.current_proposal[0]).format("dddd, MMM Do \\at HH:mm");
