@@ -1,5 +1,5 @@
 /* CSS declarations go here */
-body {
+body.gimagi {
   background: rgb(80, 107, 184);
   margin: 0;
   padding: 0;
@@ -25,6 +25,23 @@ body {
   float: left;
   margin-right: 30px;
   margin-bottom: 30px;
+}
+
+.meeting-box {
+  font-size: 120%;
+  margin-bottom: 5px;
+}
+
+.meeting .duration {
+  color: #888;
+  font-size: 80%;
+}
+
+.meeting hr {
+  border: 0;
+  border-top: 1px solid #888;
+  display: block;
+  height: 1px;
 }
 
 .new-meeting {
@@ -69,7 +86,9 @@ body {
 
 .show-details .plus {
   font-size: 40px;
-  margin-top: -9px;
+  line-height: 40px;
+  height: 40px;
+  margin-top: -4px;
   display: inline-block;
   font-weight: bold;
 }

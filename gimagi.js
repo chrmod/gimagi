@@ -197,7 +197,7 @@ if (Meteor.isClient) {
         this.status = 'ready'
       }
       Meetings.update(this._id, {
-        $set: { 
+        $set: {
           pendingon: this.pendingon,
           people: this.people,
           status: this.status
@@ -247,8 +247,23 @@ if (Meteor.isClient) {
     },
     isPendingOnMe: function () {
       return this.pendingon.indexOf(Meteor.user().profile.name) > -1;
-    }
+    },
+    niceDuration() {
+      return moment.duration(this.duration, 'minutes').asHours();
+    },
+    niceProposal() {
+      return moment(this.current_proposal).format("dddd, MMM Do \\at HH:mm");
+    },
   })
+
+  Template.meeting_box_status.helpers({
+    acceptedCount() {
+      return this.people.length - this.pendingon.length - 1;
+    },
+    waitingCount() {
+      return this.pendingon.length;
+    }
+  });
 
   Template.meeting_box.events({
     'click .meeting-box': function (event, template) {
