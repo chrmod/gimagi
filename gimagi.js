@@ -269,7 +269,7 @@ if (Meteor.isClient) {
       return moment.duration(this.duration, 'minutes').asHours();
     },
     niceProposal() {
-      return moment(this.current_proposal).format("dddd, MMM Do \\at HH:mm");
+      return moment(this.current_proposal[0]).format("dddd, MMM Do \\at HH:mm");
     },
   })
 
