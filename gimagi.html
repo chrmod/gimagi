@@ -81,6 +81,16 @@
 	<div>This meeting is pending on you:</div>
 	<div>{{date}}</div>
 	<input id="agree" type="button" value="agree" />
-	<input id="suggest" type="button" value="suggest another date" />
+	<input id="suggest-other" type="button" value="suggest another date" />
 	<input id="opt-out" type="button" value="opt-out" />
+	{{#if suggestMode}}
+	  {{> suggest_other}}
+	{{/if}}
+</template>
+
+<template name="suggest_other">
+  <div>Please select:</div>
+  {{#each proposals}}
+    <div id="proposal">{{this}}</div>
+  {{/each}}
 </template>
