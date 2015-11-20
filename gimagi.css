@@ -1,1 +1,87 @@
 /* CSS declarations go here */
+body {
+  background: rgb(80, 107, 184);
+  margin: 0;
+  padding: 0;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  color: white;
+}
+
+.content {
+  margin: 30px auto;
+  width: 990px;
+}
+
+.meetings {
+  clear: both;
+}
+
+.meeting {
+  color: black;
+  display: inline-block;
+  width: 300px;
+  height: 200px;
+  background-color: white;
+  float: left;
+  margin-right: 30px;
+}
+
+.new-meeting {
+  clear: both;
+  padding: 40px 0;
+}
+
+.status-bar {
+  width: 20px;
+  height: 100%;
+  float: left;
+  background: white;
+} 
+
+.pending .status-bar {
+  background-color: rgb(254, 83, 71);
+}
+
+.initial .status-bar {
+  background-color: rgb(255, 200, 4);
+}
+
+.ready .status-bar {
+  background-color: rgb(87, 233, 196);
+}
+
+.meeting-content {
+  padding: 15px;
+  padding-left: 35px;
+}
+
+.show-details {
+  background-color: rgb(147, 166, 209);
+  color: white;
+  height: 40px;
+  width: 40px;
+  display: inline-block;
+  border: 0;
+  text-align: center; 
+  border-radius: 100%;
+}
+
+.show-details .plus {
+  font-size: 40px;
+  margin-top: -9px;
+  display: inline-block;
+  font-weight: bold;
+}
+
+.login {
+  float: right;
+}
+.menu {
+  overflow: hidden;
+}
+
+.hi {
+  color: white;
+  font-size: 30px;
+  float: left;
+}

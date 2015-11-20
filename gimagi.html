@@ -3,33 +3,62 @@
 </head>
 
 <body>
-  <h1>Welcome to GimaGi!</h1>
-  {{> loginButtons}}
+  <div class="content">
+  <div class="menu">
+    <div class="hi">
+      Hi, {{userName}}!
+    </div>
+    <div class="login">
+      {{> loginButtons}}
+    </div>
+  </div>
+  <br/><br/>
+
   {{> home}}
+  </div>
 </body>
 
 <template name="home">
-  <button class="show-details">initiate new meeting</button>
-  {{#if detailsMode}}
-	{{> meeting_details}}
-  {{/if}}
-  {{#each meetings}}
-  	{{> meeting_box}}
-  {{/each}}
+  <div class="meetings">
+    {{#each pendingMeetings}}
+      {{> meeting_box}}
+    {{/each}}
+  </div>
+  <div class="new-meeting">
+    <div class="show-details">
+      <span class="plus">
+      +
+      </span>
+    </div>
+    {{#if detailsMode}}
+    {{> meeting_details}}
+    {{/if}}
+  </div>
+  
+  <div class="meetings">
+    {{#each meetings}}
+    	{{> meeting_box}}
+    {{/each}}
+  </div>
 
 </template>
 
 <template name="meeting_box">
-  <div class="meeting-box">{{name}}</div>
-  <p>Status: {{status}}</p>
-  {{#if isPendingOnMe}}
-  	{{> pending_on_me}}
-  {{else}}
-  	{{#if showDetails}}
-  	  {{> meeting_details}}
-    {{/if}}
-  {{/if}}
-  <p>{{ current_proposal }}</p>
+  <div class="meeting {{status}}" >
+    <div class="status-bar"></div>
+    <div class="meeting-content">
+      <div class="meeting-box">{{name}}</div>
+      <p>Status: {{status}}</p>
+      {{#if isPendingOnMe}}
+      	{{> pending_on_me}}
+      {{else}}
+      	{{#if showDetails}}
+      	  {{> meeting_details}}
+        {{/if}}
+      {{/if}}
+      <p>{{ current_proposal }}</p>
+    </div>
+  </div>
   <!-- {{#each proposals}}
   {{ proposals[0] }}
   {{/each}} -->
@@ -42,7 +71,7 @@
     <input type="date" name="to" value="{{to}}" placeholder="To..." />
     <input type="text" name="duration" value="{{duration}}" placeholder="Duration..." />
     <input type="text" name="description" value="{{description}}" placeholder="Description..." />
-    <input type="text" name="constraints" value="{{constraints}}" placeholder="Constraints..." />
+    <input type="text" name="constraints" value="{{constraints}}" placeholder="Constraints..."/>
     <input type="text" name="people" value="{{#each people}} {{this}} {{/each}}" placeholder="people..." required/>
     <input type="submit" value="initiate"/>
   </form>

@@ -172,12 +172,25 @@ if (Meteor.isClient) {
     }
   });
 
+  Template.body.helpers({
+    userName() {
+      return Meteor.user().profile.name.split(" ")[0];
+    }
+  })
+
   Template.home.helpers({
     counter: function () {
       return Meetings.find().fetch().length;
     },
+    pendingMeetings() {
+      return Meetings.find({people: Meteor.user().profile.name}).fetch().filter(function (meeting) {
+        return meeting.status === "pending"
+      });
+    },
     meetings: function () {
-      return Meetings.find({people: Meteor.user().profile.name}).fetch();
+      return Meetings.find({people: Meteor.user().profile.name}).fetch().filter(function (meeting) {
+        return meeting.status !== "pending"
+      });
     },
     detailsMode: function () {
       return Template.instance().detailsMode.get();
