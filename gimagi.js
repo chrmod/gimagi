@@ -14,6 +14,11 @@ var IntervalSet = function(intervals) {
 IntervalSet.prototype = {
 
   addDateRange: function(start, end) {
+    start = moment(start);
+    end = moment(end);
+    if (start.isSame(end, 'day')) {
+      end.endOf('day');
+    }
     var interval = moment.range(moment(start), moment(end)),
       self = this;
     interval.by('days', function(start) {
@@ -333,8 +338,12 @@ if (Meteor.isServer) {
       // check(meeting.constraints, Array);
       // check(meeting.duration, Number);
 
-      var intervals = new IntervalSet();
-      intervals.addDateRange(moment.max(meeting.from, moment()), meeting.to);
+      var intervals = new IntervalSet(),
+        from = moment(moment.max(meeting.from, moment())),
+        to = moment(meeting.to);
+      to.endOf('day');
+
+      intervals.addDateRange(from, to);
       if (meeting.constraints.indexOf('work_hours') > -1) {
         intervals.betweenHours(9, 18);
       }
@@ -356,8 +365,8 @@ if (Meteor.isServer) {
           calendars = GoogleApi.get("calendar/v3/users/me/calendarList", {user: user}),
           calendar_ids = calendars.items.filter(function(item) { return 'primary' in item && item['primary'] == true}).map(function(e) { return e.id; }),
           data = {
-            "timeMin": moment(meeting.from).toISOString(),
-            "timeMax": moment(meeting.to).toISOString(),
+            "timeMin": from.toISOString(),
+            "timeMax": to.toISOString(),
             "items": calendar_ids.map(function(id) { return {"id": id}})
           },
           freebusy = GoogleApi.post("calendar/v3/freeBusy", {user: user, data: data});
@@ -369,7 +378,7 @@ if (Meteor.isServer) {
       });
 
       var proposals = intervals.getCandidates(moment.duration({'minutes': meeting.duration}), moment.duration({'minutes': 30}), 6),
-        current_proposal = proposals.pop();
+        current_proposal = proposals.shift();
       console.log(proposals);
       if (proposals.length > 0) {
         Meetings.update(id, {
